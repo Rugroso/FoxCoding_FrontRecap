@@ -23,94 +23,126 @@ export default function App () {
   const [loading, setLoading] = useState(false)
   const [respuesta, setRespuesta] = useState<User[]>([])
   const [changeData, setChangeData] = useState(false)
+  const [send, setSend] = useState(false)
+  const [card, setCard] = useState<Card[]>([])
+  const [needData, setNeedData] = useState('')
 
-  const [card, setCard] = useState<Card>({
-    title: 'Fantastic Project',
-    description: 'Project that I made with React, TypeScript, Tailwind CSS, ESLint, and Prettier',
-    technologies: ['React', 'TypeScript', 'Tailwind CSS', 'ESLint', 'Prettier'],
-    githubUrl: '',
-    imageUrl: 'https://media.geeksforgeeks.org/wp-content/uploads/20240307175325/React-Projects-with-Source-Code-%5B2024%5D.webp',
-  })
+  //Todo esto de aqui es para el forms que tenemos
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [technologies, settechnologies] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/todos/')
+    setLoading(true);
+    fetch('http://localhost:3000/cards')
       .then(response => response.json())
       .then(json => {
         console.log(json)
-        setRespuesta(Array.isArray(json) ? json : [json])
-        setLoading(false)
+        if (Array.isArray(json)) {
+          setCard(json); 
+        } else {
+          setCard([json]); 
+        }
       })
-  }, [loading])
+      .catch(error => console.error("Error al cargar datos:", error))
+      .finally(() => setLoading(false)); 
+  }, [loading, send]);
 
-  useEffect(() => {
-    if (changeData) {
-      setCard({
-        title: 'Innovative Dashboard',
-        description: 'A sleek and modern dashboard built with Next.js, TypeScript, Tailwind CSS, and Recharts for interactive data visualization.',
-        technologies: ['Next.js', 'TypeScript', 'Tailwind CSS', 'Recharts', 'Node.js'],
-        githubUrl: 'https://github.com/your-repo',
-        imageUrl: 'https://www.interviewbit.com/blog/wp-content/uploads/2021/12/React-Projects.png',
-      })
-    } else{
-      setCard({
-        title: 'Fantastic Project',
-        description: 'Project that I made with React, TypeScript, Tailwind CSS, ESLint, and Prettier',
-        technologies: ['React', 'TypeScript', 'Tailwind CSS', 'ESLint', 'Prettier'],
-        githubUrl: '',
-        imageUrl: 'https://media.geeksforgeeks.org/wp-content/uploads/20240307175325/React-Projects-with-Source-Code-%5B2024%5D.webp',
-      })
+  const sendData = async () => {
+    if (title === '' || description === '' || technologies === '' || githubUrl === '' || imageUrl === '') {
+      console.log('Faltan datos');
+      setNeedData('Faltan datos')
+      return;
     }
-    
-  }, [changeData])
+    const rawResponse = await fetch('http://localhost:3000/cards', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({title, description, technologies, githubUrl, imageUrl})
+    });
+    const content = await rawResponse.json();
+    console.log(content);
+    setSend(!send)
+  }
+
 
   return (
     <>
       <div className='flex flex-col items-center justify-center py-2'>
-        <div>
-          <ProjectCard 
-            title={card.title}
-            description={card.description}
-            technologies={card.technologies}
-            githubUrl={card.githubUrl}
-            imageUrl={card.imageUrl}
-          ></ProjectCard>
+        <div className='flex flex-row flex-wrap w-5/5 justify-center items-center bg'>
+          {card.map((item, index) => {
+            return (
+              <ProjectCard
+                key={index}
+                title={item.title}
+                description={item.description}
+                technologies={item.technologies}
+                githubUrl={item.githubUrl}
+                imageUrl={item.imageUrl}
+                >
+              </ProjectCard>
+            )
+          }
+        )}
         </div>
-          <button className=' rounded-xl bg-amber-400 p-4 mt-10 text-black font-semibold' onClick={() => setChangeData(!changeData)}>
+          {/* <button className=' rounded-xl bg-amber-400 p-4 mt-10 text-black font-semibold' onClick={() => setChangeData(!changeData)}>
               Cambiar Datos
-          </button>
-        {/* <p className='text-3xl'>Primera Prueba</p>
-        <ExampleComponent Title='Fox Coding' Description='Así es chicos, estamos enviando props al componente de ejemplo :D' />
-        <p className='text-3xl'>Segunda Prueba</p>
-        <ExampleComponent Title='Fox Coding 2' Description='Tenemos una segunda prueba' /> */}
-        {/* <div>
-          <button className=' rounded-xl bg-amber-400 p-4' onClick={() => setEstado(estado + 1)}>
-            <p className='text-xl text-black '>
-              Si das clic aqui, el estado aumentará en 1
+          </button> */}
+          <div className='mt-10'>
+            <p className='text-xl font-semibold'>
+              Enviar nuevos datos
             </p>
-          </button>
-          <div className='mt-4'> 
-            <p className='text-xl font-semibold'>El estado es: {estado}</p>
           </div>
-          <div className='mt-4'> 
-            <div className='text-xl font-semibold mb-6'>La respuesta es: {respuesta.map((item) => {
-              return (
-                <div key={item.id} className='border-2 border-black p-2 mt-2'>
-                  <p>{item.userId}</p>
-                  <p>{item.title}</p>
-                  <p>{item.userId}</p>
-                  <p>{item.id}</p>
-                  <p>{item.completed ? 'Completado' : 'No completado'}</p>
-                </div>
-              )
-            })}
-            </div>
-            <button className=' rounded-xl bg-amber-400 p-4' onClick={() => setLoading(!loading)}>
-              <p className='text-xl text-black '>
-                Recargar Datos
-              </p>
-            </button>
+          <div>
+            <p className='text-sm font-semibold text-red-500'>
+              {needData}
+            </p>
           </div>
-        </div> */}
+          <div className=' space-y-5 flex flex-col mt-5'>
+            <input 
+              className=' bg-white rounded-md text-black' 
+              type="text" 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)} 
+              placeholder="Title"
+            />
+            <input 
+              className=' bg-white rounded-md text-black' 
+              type="text" 
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)} 
+              placeholder="Description"
+            />
+            <input 
+              className=' bg-white rounded-md text-black' 
+              type="text" 
+              value={technologies} 
+              onChange={(e) => settechnologies(e.target.value)} 
+              placeholder="Technologies"
+            />
+            <input 
+              className=' bg-white rounded-md text-black' 
+              type="text" 
+              value={githubUrl} 
+              onChange={(e) => setGithubUrl(e.target.value)} 
+              placeholder="GitHub URL"
+            />
+            <input 
+              className=' bg-white rounded-md text-black' 
+              type="text" 
+              value={imageUrl} 
+              onChange={(e) => setImageUrl(e.target.value)} 
+              placeholder="Image URL"
+            />
+          </div>
+        <button className=' rounded-xl bg-amber-400 p-4 mt-10 text-black font-semibold' onClick={() => sendData()}>
+            Enviar Datos
+        </button>
+    
        </div>
     </>
   )
