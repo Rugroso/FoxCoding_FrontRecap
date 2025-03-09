@@ -2,12 +2,6 @@ import { useState, useEffect } from 'react'
 import ProjectCard from './components/card'
 import './App.css'
 
-interface User {
-  userId: number
-  id: number
-  title: string
-  completed: boolean
-}
 
 interface Card {
   title: string
@@ -19,10 +13,7 @@ interface Card {
 
 
 export default function App () {
-  const [estado, setEstado] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [respuesta, setRespuesta] = useState<User[]>([])
-  const [changeData, setChangeData] = useState(false)
   const [send, setSend] = useState(false)
   const [card, setCard] = useState<Card[]>([])
   const [needData, setNeedData] = useState('')
@@ -30,7 +21,8 @@ export default function App () {
   //Todo esto de aqui es para el forms que tenemos
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [technologies, settechnologies] = useState('');
+  const [technologiesString, settechnologiesString] = useState('');
+  const [technologies, settechnologies] = useState<string[]>([]);
   const [githubUrl, setGithubUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
@@ -51,23 +43,32 @@ export default function App () {
   }, [loading, send]);
 
   const sendData = async () => {
-    if (title === '' || description === '' || technologies === '' || githubUrl === '' || imageUrl === '') {
+    if (title === '' || description === '' || technologiesString === '' || githubUrl === '' || imageUrl === '') {
       console.log('Faltan datos');
-      setNeedData('Faltan datos')
+      setNeedData('Faltan datos');
       return;
     }
+  
+    const technologiesArray = technologiesString.split(',').map(item => item.trim());
+    settechnologies(technologiesArray);
+  
     const rawResponse = await fetch('http://localhost:3000/cards', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({title, description, technologies, githubUrl, imageUrl})
+      body: JSON.stringify({ title, description, technologies: technologiesArray, githubUrl, imageUrl })
     });
+  
     const content = await rawResponse.json();
     console.log(content);
-    setSend(!send)
-  }
+    setSend(!send);
+  };
+
+  useEffect(() => {
+    console.log(technologies)
+  }, [technologies])
 
 
   return (
@@ -120,8 +121,8 @@ export default function App () {
             <input 
               className=' bg-white rounded-md text-black' 
               type="text" 
-              value={technologies} 
-              onChange={(e) => settechnologies(e.target.value)} 
+              value={technologiesString} 
+              onChange={(e) => settechnologiesString(e.target.value)} 
               placeholder="Technologies"
             />
             <input 
